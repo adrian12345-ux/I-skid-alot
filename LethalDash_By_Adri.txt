@@ -1,0 +1,356 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local CONSTANTS = {
+	SMOOTH_POWER = 0.15,
+	DETECT_ANIM = "rbxassetid://12296113986",
+	WAIT_TIME = 1.6,
+	SNAP_DURATION = 0.38,
+	VELO_POWER = 62,
+	LOCK_DISTANCE = 15,
+	LERP_START_ALPHA = 0.32,
+	LERP_END_ALPHA = 1
+}
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "MiniDashUI"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
+
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.fromOffset(200, 45)
+main.Position = UDim2.new(0.5, -100, 0.6, 0)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BorderSizePixel = 0
+main.Active = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke")
+stroke.Parent = main
+stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(50, 50, 50)
+
+local gradient = Instance.new("UIGradient")
+gradient.Parent = main
+gradient.Rotation = 45
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0.00, Color3.fromRGB(60,30,10)),
+	ColorSequenceKeypoint.new(0.15, Color3.fromRGB(90,45,15)),
+	ColorSequenceKeypoint.new(0.30, Color3.fromRGB(120,60,20)),
+	ColorSequenceKeypoint.new(0.45, Color3.fromRGB(150,75,25)),
+	ColorSequenceKeypoint.new(0.60, Color3.fromRGB(180,90,30)),
+	ColorSequenceKeypoint.new(0.75, Color3.fromRGB(210,110,40)),
+	ColorSequenceKeypoint.new(0.90, Color3.fromRGB(240,130,50)),
+	ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,150,60)),
+})
+gradient.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0.00, 0),
+	NumberSequenceKeypoint.new(0.10, 0),
+	NumberSequenceKeypoint.new(0.11, 0.4),
+	NumberSequenceKeypoint.new(0.20, 0.4),
+	NumberSequenceKeypoint.new(0.21, 0),
+	NumberSequenceKeypoint.new(0.30, 0),
+	NumberSequenceKeypoint.new(0.31, 0.4),
+	NumberSequenceKeypoint.new(0.40, 0.4),
+	NumberSequenceKeypoint.new(0.41, 0),
+	NumberSequenceKeypoint.new(1.00, 0),
+})
+
+local label = Instance.new("TextLabel")
+label.Parent = main
+label.Size = UDim2.new(0.6, 0, 1, 0)
+label.Position = UDim2.new(0.05, 0, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = "<i><font face='Arcade' color='#2b0a3d'>L</font><font face='Arcade' color='#3a0f55'>e</font><font face='Arcade' color='#4b1470'>t</font><font face='Arcade' color='#5c1a8a'>h</font><font face='Arcade' color='#6e21a6'>a</font><font face='Arcade' color='#8129c2'>l</font><font face='Arcade' color='#9332db'> </font><font face='Arcade' color='#a845f5'>D</font><font face='Arcade' color='#b866ff'>a</font><font face='Arcade' color='#c787ff'>s</font><font face='Arcade' color='#d8a8ff'>h</font></i>"
+label.Font = Enum.Font.GothamBold
+label.TextScaled = true
+label.RichText = true
+label.TextColor3 = Color3.fromRGB(200, 200, 200)
+
+local expandBtn = Instance.new("TextButton")
+expandBtn.Parent = main
+expandBtn.Size = UDim2.fromOffset(25, 25)
+expandBtn.Position = UDim2.new(0, 0, 0, 0)
+expandBtn.Text = ">"
+expandBtn.Font = Enum.Font.GothamBold
+expandBtn.TextScaled = true
+expandBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+expandBtn.BackgroundTransparency = 1
+expandBtn.TextColor3 = Color3.new(1, 1, 1)
+expandBtn.BorderSizePixel = 0
+Instance.new("UICorner", expandBtn).CornerRadius = UDim.new(1, 0)
+
+local smoothPanel = Instance.new("Frame")
+smoothPanel.Parent = main
+smoothPanel.Size = UDim2.fromOffset(150, 0)
+smoothPanel.Position = UDim2.new(0.5, -75, 1, 0)
+smoothPanel.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+smoothPanel.BorderSizePixel = 0
+smoothPanel.ClipsDescendants = true
+Instance.new("UICorner", smoothPanel).CornerRadius = UDim.new(0, 14)
+
+local panelGradient = Instance.new("UIGradient")
+panelGradient.Parent = smoothPanel
+panelGradient.Rotation = 90
+panelGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 0, 80)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 200))
+}
+
+local smoothText = Instance.new("TextLabel")
+smoothText.Parent = smoothPanel
+smoothText.Size = UDim2.new(1, 0, 0.5, 0)
+smoothText.Position = UDim2.new(0, 0, 0, 0)
+smoothText.BackgroundTransparency = 1
+smoothText.RichText = true
+smoothText.TextScaled = true
+smoothText.Text = "<b><font color='#6a00ff'>C</font><font color='#7d1aff'>a</font><font color='#9033ff'>m</font><font color='#a44dff'> </font><font color='#b866ff'>S</font><font color='#c87fff'>m</font><font color='#d999ff'>o</font><font color='#eab3ff'>o</font><font color='#f5ccff'>t</font><font color='#ffffff'>h</font><font color='#c87fff'>?</font></b>"
+smoothText.Font = Enum.Font.GothamBold
+smoothText.TextColor3 = Color3.new(1, 1, 1)
+
+local checkBox = Instance.new("TextButton")
+checkBox.Parent = smoothPanel
+checkBox.Size = UDim2.fromOffset(40, 28)
+checkBox.Position = UDim2.new(0.5, -20, 0.6, 0)
+checkBox.Text = "X"
+checkBox.Font = Enum.Font.Arcade
+checkBox.BackgroundTransparency = 1
+checkBox.TextScaled = true
+checkBox.BackgroundColor3 = Color3.fromRGB(70, 0, 120)
+checkBox.TextColor3 = Color3.new(1, 1, 1)
+checkBox.BorderSizePixel = 0
+Instance.new("UICorner", checkBox).CornerRadius = UDim.new(1, 0)
+
+local toggle = Instance.new("Frame")
+toggle.Parent = main
+toggle.Size = UDim2.fromOffset(60, 22)
+toggle.Position = UDim2.new(0.65, 0, 0.5, -11)
+toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+toggle.BorderSizePixel = 0
+toggle.Active = true
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
+
+local knob = Instance.new("Frame")
+knob.Parent = toggle
+knob.Size = UDim2.fromOffset(18, 18)
+knob.Position = UDim2.fromOffset(2, 2)
+knob.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+knob.BorderSizePixel = 0
+Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+local StateTracker = {
+	_raw = {
+		ScriptEnabled = false,
+		SmoothEnabled = false,
+		SmoothToggleEnabled = false,
+		PanelOpen = false,
+		LastCF = Camera.CFrame,
+		Busy = false
+	}
+}
+
+setmetatable(StateTracker, {
+	__index = function(t, key)
+		return t._raw[key]
+	end,
+	__newindex = function(t, key, value)
+		local old = t._raw[key]
+		if old == value then return end
+		t._raw[key] = value
+
+		if key == "ScriptEnabled" then
+			if value then
+				TweenService:Create(toggle, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(55, 5, 55)}):Play()
+				TweenService:Create(knob, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Position = UDim2.fromOffset(40, 2)}):Play()
+				label.TextColor3 = Color3.new(1, 1, 1)
+			else
+				TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(85, 85, 85)}):Play()
+				TweenService:Create(knob, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Position = UDim2.fromOffset(2, 2)}):Play()
+				label.TextColor3 = Color3.fromRGB(85, 85, 85)
+				t.SmoothEnabled = false
+			end
+		elseif key == "SmoothToggleEnabled" then
+			if value then
+				checkBox.Text = "✓"
+				checkBox.BackgroundColor3 = Color3.fromRGB(120, 0, 255)
+			else
+				checkBox.Text = "X"
+				checkBox.BackgroundColor3 = Color3.fromRGB(70, 0, 120)
+				t.SmoothEnabled = false
+			end
+		elseif key == "PanelOpen" then
+			if value then
+				TweenService:Create(smoothPanel, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(150, 70)}):Play()
+				expandBtn.Text = "↑"
+			else
+				TweenService:Create(smoothPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.fromOffset(150, 0)}):Play()
+				expandBtn.Text = "↓"
+			end
+		end
+	end
+})
+
+RunService.RenderStepped:Connect(function()
+	if not StateTracker.ScriptEnabled or not StateTracker.SmoothEnabled or not StateTracker.SmoothToggleEnabled then return end
+	local currentCF = Camera.CFrame  
+	StateTracker.LastCF = StateTracker.LastCF:Lerp(currentCF, CONSTANTS.SMOOTH_POWER)  
+	Camera.CFrame = StateTracker.LastCF
+end)
+
+local Character, Humanoid, HRP
+local animConnection
+
+local function getTarget()  
+	local liveFolder = workspace:FindFirstChild("Live")  
+	if not liveFolder then return nil end  
+
+	local closestHRP = nil  
+	local closestDistance = CONSTANTS.LOCK_DISTANCE  
+
+	for _, v in pairs(liveFolder:GetChildren()) do  
+		if v:IsA("Model") and v ~= Character then  
+			local hrp = v:FindFirstChild("HumanoidRootPart")  
+			local humanoid = v:FindFirstChildOfClass("Humanoid")  
+
+			if hrp and humanoid and humanoid.Health > 0 then  
+				local distance = (HRP.Position - hrp.Position).Magnitude  
+				if distance <= CONSTANTS.LOCK_DISTANCE and distance < closestDistance then  
+					closestDistance = distance  
+					closestHRP = hrp  
+				end  
+			end  
+		end  
+	end  
+	return closestHRP  
+end  
+
+local function setupCharacter(char)
+	Character = char  
+	Humanoid = Character:WaitForChild("Humanoid")  
+	HRP = Character:WaitForChild("HumanoidRootPart")  
+	StateTracker.Busy = false  
+
+	if animConnection then animConnection:Disconnect() end  
+
+	animConnection = Humanoid.AnimationPlayed:Connect(function(track)  
+		if not StateTracker.ScriptEnabled then return end  
+
+		if track.Animation and track.Animation.AnimationId == CONSTANTS.DETECT_ANIM then  
+			if StateTracker.Busy then return end  
+			StateTracker.Busy = true  
+			StateTracker.SmoothEnabled = true  
+			StateTracker.LastCF = Camera.CFrame  
+			
+			task.delay(2, function()  
+				StateTracker.SmoothEnabled = false  
+			end)  
+
+			task.wait(CONSTANTS.WAIT_TIME)  
+			if not StateTracker.ScriptEnabled then StateTracker.Busy = false return end  
+
+			Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			task.wait()
+
+			local currentVel = HRP.AssemblyLinearVelocity
+			HRP.AssemblyLinearVelocity = Vector3.new(currentVel.X, CONSTANTS.VELO_POWER, currentVel.Z)
+
+			Character:WaitForChild("Communicate"):FireServer({  
+				Dash = Enum.KeyCode.W,  
+				Key = Enum.KeyCode.Q,  
+				Goal = "KeyPress"  
+			})  
+
+			local target = getTarget()  
+			if target then  
+				task.delay(0.2, function()  
+					local startTime = tick()  
+					local connection
+					
+					connection = RunService.RenderStepped:Connect(function()  
+						if not StateTracker.ScriptEnabled or (tick() - startTime) >= CONSTANTS.SNAP_DURATION or not target or not target.Parent then  
+							Humanoid.AutoRotate = true  
+							connection:Disconnect()  
+							return  
+						end  
+
+						Humanoid.AutoRotate = false  
+						local myPos = HRP.Position  
+						local targetPos = target.Position  
+
+						local flatTarget = Vector3.new(targetPos.X, myPos.Y, targetPos.Z)  
+						local targetCF = CFrame.new(myPos, flatTarget)  
+
+						local progress = math.clamp((tick() - startTime) / CONSTANTS.SNAP_DURATION, CONSTANTS.LERP_START_ALPHA, CONSTANTS.LERP_END_ALPHA)
+						local smooth = progress * progress * (3 - 2 * progress)
+
+						HRP.CFrame = HRP.CFrame:Lerp(targetCF, smooth)
+					end)
+				end)
+			end
+			StateTracker.Busy = false  
+		end  
+	end)
+end
+
+if LocalPlayer.Character then setupCharacter(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(setupCharacter)
+
+expandBtn.MouseButton1Click:Connect(function()
+	StateTracker.PanelOpen = not StateTracker.PanelOpen
+end)
+
+checkBox.MouseButton1Click:Connect(function()
+	StateTracker.SmoothToggleEnabled = not StateTracker.SmoothToggleEnabled
+end)
+
+toggle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		StateTracker.ScriptEnabled = not StateTracker.ScriptEnabled
+	end
+end)
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+main.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if dragging then return end  
+		dragging = true  
+		dragInput = input  
+		dragStart = input.Position  
+		startPos = main.Position  
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input == dragInput then
+		dragging = false
+		dragInput = nil
+	end
+end)
+
+pcall(function()
+	game.StarterGui:SetCore("SendNotification", {
+		Title = "made by Adri",
+		Text = "Metatable System Loaded",
+		Duration = 3
+	})
+end)
